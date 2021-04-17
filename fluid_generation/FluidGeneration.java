@@ -44,6 +44,11 @@ public class FluidGeneration {
         double floorHeight = 7.5;
         // density of floor
         double floorDensity = 255.0;
+        // cube size on the floor (real world coordinates)
+        double floorCubeSize = 20;
+        // cube coordinates
+        double cubePositionX = 70.0;
+        double cubePositionY = 70.0;
 
         // initialize both generators
         DensityGeneration densityGenerator = new DensityGeneration();
@@ -93,6 +98,9 @@ public class FluidGeneration {
 
         displayMessageWithTimestamp("Generate fluid floor");
         fluidSimulation.setFloor(floorHeight / dimensionStep, floorDensity);
+
+        displayMessageWithTimestamp("Generate cube");
+        fluidSimulation.addCubeOnFloor(floorCubeSize / dimensionStep, floorHeight / dimensionStep, cubePositionX, cubePositionY, floorDensity);
 
 //        fluidSimulation.writeDensityAndSpeedToConsole();
         fluidSimulation.writeDensitiesToFile(endFileName, floorDensity);
@@ -357,6 +365,19 @@ public class FluidGeneration {
             for (int i = 1; i < floorHeight; i++) {
                 for (int j = 1; j < this.size; j++) {
                     for (int k = 1; k < this.size; k++) {
+                        this.density[index(k, j, i)] = floorDensity;
+                    }
+                }
+            }
+        }
+
+        /**
+         * puts a cube of floorDensity of cubeHeight on the
+         */
+        public void addCubeOnFloor(double cubeHeight, double floorHeight, double cubePosX, double cubePosY, double floorDensity) {
+            for (int i = (int) floorHeight; i < cubeHeight + floorHeight; i++) {
+                for (int j = (int) cubePosY; j < cubePosY + cubeHeight; j++) {
+                    for (int k = (int) cubePosX; k < cubePosX + cubeHeight; k++) {
                         this.density[index(k, j, i)] = floorDensity;
                     }
                 }
