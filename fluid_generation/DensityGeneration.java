@@ -4,22 +4,22 @@ public class DensityGeneration {
 
     public static void main(String[] args) {
         // for TESTING purposes
-        int size = 8;
-        DensityGeneration g = new DensityGeneration();
-        DensityField d = g.calculateDensityField(size, 0.2, 0.5, 123456L, 12345L, 1.4, 0.2f, 1.0);
-        System.out.println("done with calculation. Results are: ");
+        //int size = 8;
+        //DensityGeneration g = new DensityGeneration();
+        //DensityField d = g.calculateDensityField(size, 0.2, 0.5, 123456L, 12345L, 1.4, 0.2f, 1.0);
+        //System.out.println("done with calculation. Results are: ");
 
-        for (int i = d.points.length - size; i >= 0; i -= size) {
-            for (int j = 0; j < size; j++)
-                System.out.printf("%.4f\t", d.points[i + j].getDensity());
-            System.out.println();
-            if (i % (size * size) == 0)
-                System.out.println("--------------------------------------------------------------");
-        }
+        //for (int i = d.points.length - size; i >= 0; i -= size) {
+        //    for (int j = 0; j < size; j++)
+        //        System.out.printf("%.4f\t", d.points[i + j].getDensity());
+        //    System.out.println();
+        //    if (i % (size * size) == 0)
+        //        System.out.println("--------------------------------------------------------------");
+        //}
     }
 
-    public DensityField calculateDensityField(int size, double densityRange, double densityBase, long densitySeed, long heightsSeed, double heightBase, double dimensionStep, double heightDiff) {
-        DensityField densityField = new DensityField(size, densityRange, densityBase, heightBase, heightDiff);
+    public DensityField calculateDensityField(int size, double densityRange, double densityBase, long densitySeed, long heightsSeed, double heightBase, double dimensionStep, double heightDiff, VoxelType[] terrain, double floorDensity) {
+        DensityField densityField = new DensityField(size, densityRange, densityBase, heightBase, heightDiff, terrain, floorDensity);
         densityField.calculateHeights(heightsSeed, dimensionStep);
         densityField.calculateDensities(densitySeed, dimensionStep);
         return densityField;
@@ -35,7 +35,10 @@ public class DensityGeneration {
         Point[] points;
         double[] heights;
 
-        public DensityField(int size, double densityRange, double densityBase, double heightBase, double heightDiff) {
+        VoxelType[] terrain;
+        double floorDensity;
+
+        public DensityField(int size, double densityRange, double densityBase, double heightBase, double heightDiff, VoxelType[] terrain, double floorDensity) {
             this.size = size;
             this.densityRange = densityRange;
             this.densityBase = densityBase;
@@ -43,6 +46,8 @@ public class DensityGeneration {
             this.heightDiff = heightDiff;
             this.points = new Point[size * size * size];
             this.heights = new double[size * size];
+            this.terrain = terrain;
+            this.floorDensity = floorDensity;
         }
 
         public void calculateHeights(long seed, double dimensionStep) {
@@ -63,6 +68,8 @@ public class DensityGeneration {
                         Point p = new Point(k * dimensionStep, j * dimensionStep, i * dimensionStep, densityBase);
                         if (i * dimensionStep > this.heights[index2D(k, j)])
                             p.setDensity(1.0);
+                        else if (this.terrain[index3D(k, j, i)].equals(VoxelType.CUBE))
+                            p.setDensity(this.floorDensity);
                         else {
                             // noise without octaves
                             // double perlin = perlinNoiseGenerator2.perlin(p.getX(), p.getY(), p.getZ(), false);

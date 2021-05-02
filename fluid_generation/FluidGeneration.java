@@ -5,16 +5,16 @@ import java.io.IOException;
 import java.sql.Timestamp;
 
 /**
- * Fluid generation algorithm with different Perlin noise algorithm
+ * Fluid generation algorithm with Perlin noise algorithm
  */
 
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "fluid_simulation_512.raw";
+        String endFileName = "fluid_simulation_512_air_around_5.raw";
 
         // size of the cube (N)
-        int size = 512;
+        int size = 510;
         // base height of the fluid (in real-world measurements)
         double heightBase = 30.0;
         // range of height (must be equal in curl and density) - in real-world measurements
@@ -39,7 +39,7 @@ public class FluidGeneration {
         // curl seed
         long curlSeed = 1654987L;
         // number of steps to perform the simulation
-        int steps = 20;
+        int steps = 0;
         // floor height
         double floorHeight = 7.5;
         // density of floor
@@ -47,17 +47,19 @@ public class FluidGeneration {
         // cube size on the floor (real world coordinates)
         double floorCubeSize = 20;
         // cube coordinates
-        double cubePositionX = 70.0;
-        double cubePositionY = 70.0;
+        double cubePositionX = 15.0;
+        double cubePositionY = 15.0;
+
+        VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
         // initialize both generators
         DensityGeneration densityGenerator = new DensityGeneration();
         CurlNoiseGeneration curlNoiseGenerator = new CurlNoiseGeneration();
-        FluidSimulation fluidSimulation = new FluidSimulation(size, diffusion, viscosity, dt);
+        FluidSimulation fluidSimulation = new FluidSimulation(size, diffusion, viscosity, dt, terrain);
 
         // calculate densities
         displayMessageWithTimestamp("Calculating density field");
-        DensityGeneration.DensityField densityField = densityGenerator.calculateDensityField(size, densityRange, densityBase, densitySeed, heightSeed, heightBase, dimensionStep, heightDiff);
+        DensityGeneration.DensityField densityField = densityGenerator.calculateDensityField(size, densityRange, densityBase, densitySeed, heightSeed, heightBase, dimensionStep, heightDiff, terrain, floorDensity);
         // add density
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -72,7 +74,7 @@ public class FluidGeneration {
 
         // calculate potential field
         displayMessageWithTimestamp("Calculating potential field");
-        CurlNoiseGeneration.PotentialField potentialField = curlNoiseGenerator.calculatePotentialField(size, curlSeed, heightSeed, dimensionStep, heightBase, heightDiff);
+        CurlNoiseGeneration.PotentialField potentialField = curlNoiseGenerator.calculatePotentialField(size, curlSeed, heightSeed, dimensionStep, heightBase, heightDiff, terrain);
         displayMessageWithTimestamp("Starting setting up environment");
         // add speed
         for (int i = 0; i < size; i++) {
@@ -96,14 +98,14 @@ public class FluidGeneration {
 
         displayMessageWithTimestamp("Finished with fluid simulation");
 
-        displayMessageWithTimestamp("Generate fluid floor");
-        fluidSimulation.setFloor(floorHeight / dimensionStep, floorDensity);
+        //displayMessageWithTimestamp("Generate fluid floor");
+        //fluidSimulation.setFloor(floorHeight / dimensionStep, floorDensity);
 
-        displayMessageWithTimestamp("Generate cube");
-        fluidSimulation.addCubeOnFloor(floorCubeSize / dimensionStep, floorHeight / dimensionStep, cubePositionX, cubePositionY, floorDensity);
+        //displayMessageWithTimestamp("Generate cube");
+        //fluidSimulation.addCubeOnFloor(floorCubeSize / dimensionStep, floorHeight / dimensionStep, cubePositionX, cubePositionY, floorDensity);
 
 //        fluidSimulation.writeDensityAndSpeedToConsole();
-        fluidSimulation.writeDensitiesToFile(endFileName, floorDensity);
+        fluidSimulation.writeDensitiesToFileAddAirAround(endFileName, floorDensity);
 
         displayMessageWithTimestamp("Finished writing densities to file. All done!");
     }
@@ -111,6 +113,40 @@ public class FluidGeneration {
     private static void displayMessageWithTimestamp(String message) {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         System.out.println(timestamp + ": " + message);
+    }
+
+    private static VoxelType[] createTerrain(int size, double dimensionStep, double floorHeight, double cubePositionX, double cubePositionY, double cubeSize) {
+        VoxelType[] terrain = new VoxelType[size * size * size];
+        for (int k = 0; k < size; k++) {
+            for (int j = 0; j < size; j++) {
+                for (int i = 0; i < size; i++) {
+                    // handle floor
+                    if (k < floorHeight / dimensionStep) {
+                        terrain[index(i, j, k, size)] = VoxelType.FLOOR;
+                    } else if (cube(dimensionStep, cubePositionX, cubePositionY, cubeSize, floorHeight, i, j, k))
+                        // handle cube
+                        terrain[index(i, j, k, size)] = VoxelType.CUBE;
+                    else
+                        terrain[index(i, j, k, size)] = VoxelType.OTHER;
+                }
+            }
+        }
+        return terrain;
+    }
+
+    private static int index(int x, int y, int z, int size) {
+        return (x + y * size + z * size * size);
+    }
+
+    private static boolean cube(double dimensionStep, double cubePositionX, double cubePositionY, double cubeSize, double floorHeight, int positionX, int positionY, int positionZ) {
+        boolean correctX = positionX >= transform(cubePositionX, dimensionStep) && positionX <= transform(cubePositionX + cubeSize, dimensionStep);
+        boolean correctY = positionY >= transform(cubePositionY, dimensionStep) && positionY <= transform(cubePositionY + cubeSize, dimensionStep);
+        boolean correctZ = positionZ <= transform(cubeSize + floorHeight, dimensionStep);
+        return correctX && correctY && correctZ;
+    }
+
+    private static double transform(double value, double dimensionStep) {
+        return value / dimensionStep;
     }
 
     static class FluidSimulation {
@@ -135,7 +171,9 @@ public class FluidGeneration {
 
         int iter;
 
-        public FluidSimulation(int n, double diffusion, double viscosity, double dt) {
+        VoxelType[] terrain;
+
+        public FluidSimulation(int n, double diffusion, double viscosity, double dt, VoxelType[] terrain) {
             this.n = n;
             this.size = n + 2;
             this.diff = diffusion;
@@ -151,6 +189,7 @@ public class FluidGeneration {
             this.oldVelocityX = initializeArray();
             this.oldVelocityY = initializeArray();
             this.oldVelocityZ = initializeArray();
+            this.terrain = terrain;
         }
 
         private double[] initializeArray() {
@@ -166,6 +205,13 @@ public class FluidGeneration {
             int endY = y - 1;
             int endZ = z - 1;
             return (endX + endY * this.n + endZ * this.n * this.n);
+        }
+
+        private int cubeIndexNew(int x, int y, int z) {
+            int endX = x - 1;
+            int endY = y - 1;
+            int endZ = z - 1;
+            return (endX + endY * this.size + endZ * this.size * this.size);
         }
 
         public void addDensity(int x, int y, int z, double amount) {
@@ -384,15 +430,27 @@ public class FluidGeneration {
             }
         }
 
-        public void writeDensitiesToFile(String fileName, double floorDensity) {
-            int totalSize = this.n * this.n * this.n;
+        // add air density around the cube
+        public void writeDensitiesToFileAddAirAround(String fileName, double floorDensity) {
+            int totalSize = this.size * this.size * this.size;
             double[] minMax = getMaxMinDensity(floorDensity);
             byte[] array = new byte[totalSize];
-            for (int i = 1; i <= this.n; i++) {
-                for (int j = 1; j <= this.n; j++) {
-                    for (int k = 1; k <= this.n; k++) {
-                        double d = this.density[index(k, j, i)];
-                        array[cubeIndex(k, j, i)] = byteMap(minMax[0], minMax[1], d, floorDensity);
+            for (int i = 0; i < this.size; i++) {
+                for (int j = 0; j < this.size; j++) {
+                    for (int k = 0; k < this.size; k++) {
+                        if (i == 0 || j == 0 || k == 0 || i == this.size - 1 || j == this.size - 1 || k == this.size - 1) {
+                            array[index(k, j, i)] = (byte) 0;
+                            continue;
+                        }
+                        VoxelType t = this.terrain[cubeIndex(k, j, i)];
+                        if (t.equals(VoxelType.CUBE))
+                            array[index(k, j, i)] = (byte) 254;
+                        else if (t.equals(VoxelType.FLOOR))
+                            array[index(k, j, i)] = (byte) 255;
+                        else {
+                            double d = this.density[cubeIndex(k, j, i)];
+                            array[index(k, j, i)] = byteMap(minMax[0], minMax[1], d, floorDensity);
+                        }
                     }
                 }
             }
@@ -428,6 +486,8 @@ public class FluidGeneration {
             for (int i = 1; i <= this.n; i++)
                 for (int j = 1; j <= this.n; j++)
                     for (int k = 1; k <= this.n; k++) {
+                        if (!terrain[cubeIndex(k, j, i)].equals(VoxelType.OTHER))
+                            continue;
                         double density = this.density[index(k, j, i)];
                         if (density >= floorDensity)
                             continue;
@@ -451,7 +511,7 @@ public class FluidGeneration {
 
             double interval = max - min;
             double percentage = (value - min) / interval;
-            int mappedValue = (int) (percentage * 255);
+            int mappedValue = (int) (percentage * 253);
             return (byte) mappedValue;
         }
 

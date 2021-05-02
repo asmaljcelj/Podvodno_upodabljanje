@@ -6,22 +6,22 @@ public class CurlNoiseGeneration {
         // for TESTING purposes
         //        PotentialField p = new PotentialField(256);
         //        p.calculateVelocityField(123456L, 0.2f);
-        int size = 8;
-        CurlNoiseGeneration c = new CurlNoiseGeneration();
-        PotentialField p = c.calculatePotentialField(size, 123654L, 12345L, 0.2f, 1.4, 1.0);
-        System.out.println("done with calculation. Results are: ");
+        //int size = 8;
+        //CurlNoiseGeneration c = new CurlNoiseGeneration();
+        //PotentialField p = c.calculatePotentialField(size, 123654L, 12345L, 0.2f, 1.4, 1.0);
+        //System.out.println("done with calculation. Results are: ");
 
-        for (int i = p.potentialField.length - size; i >= 0; i -= size) {
-            for (int j = 0; j < size; j++)
-                System.out.printf("%s", p.potentialField[i + j].getPotential());
-            System.out.println();
-            if (i % (size * size) == 0)
-                System.out.println("--------------------------------------------------------------------------------------------------");
-        }
+        //for (int i = p.potentialField.length - size; i >= 0; i -= size) {
+        //    for (int j = 0; j < size; j++)
+        //        System.out.printf("%s", p.potentialField[i + j].getPotential());
+        //    System.out.println();
+        //    if (i % (size * size) == 0)
+        //        System.out.println("--------------------------------------------------------------------------------------------------");
+        //}
     }
 
-    public PotentialField calculatePotentialField(int size, long curlSeed, long heightSeed, double dimensionStep, double heightBase, double heightDiff) {
-        PotentialField potentialField = new PotentialField(size, heightBase, heightDiff);
+    public PotentialField calculatePotentialField(int size, long curlSeed, long heightSeed, double dimensionStep, double heightBase, double heightDiff, VoxelType[] terrain) {
+        PotentialField potentialField = new PotentialField(size, heightBase, heightDiff, terrain);
         potentialField.calculateHeights(heightSeed, dimensionStep);
         potentialField.calculateVelocityField(curlSeed, dimensionStep);
         return potentialField;
@@ -36,13 +36,15 @@ public class CurlNoiseGeneration {
         PotentialCell[] potentialField;
         double[] heights;
 
+        VoxelType[] terrain;
 
-        public PotentialField(int size, double heightBase, double heightDiff) {
+        public PotentialField(int size, double heightBase, double heightDiff, VoxelType[] terrain) {
             this.size = size;
             this.heightBase = heightBase;
             this.heightDiff = heightDiff;
             this.potentialField = new PotentialCell[size * size * size];
             this.heights = new double[size * size];
+            this.terrain = terrain;
         }
 
         public void calculateHeights(long seed, double dimensionStep) {
@@ -62,6 +64,8 @@ public class CurlNoiseGeneration {
                     for (int k = 0; k < this.size; k++) {
                         PotentialCell p = new PotentialCell(k * dimensionStep, j * dimensionStep, i * dimensionStep);
                         if (i * dimensionStep > this.heights[index2D(k, j)])
+                            p.setPotential(new Vector(0, 0, 0));
+                        else if (terrain[index3D(k, j, i)].equals(VoxelType.CUBE) || terrain[index3D(k, j, i)].equals(VoxelType.FLOOR))
                             p.setPotential(new Vector(0, 0, 0));
                         else
                             p.calculatePotential(displacement, perlinNoiseGenerator2);
