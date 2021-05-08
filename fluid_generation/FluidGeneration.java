@@ -11,18 +11,18 @@ import java.sql.Timestamp;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "fluid_simulation_512_air_around_5.raw";
+        String endFileName = "20_air_around.raw";
 
         // size of the cube (N)
-        int size = 510;
+        int size = 20;
         // base height of the fluid (in real-world measurements)
-        double heightBase = 30.0;
+        double heightBase = 1.2;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 10.0;
+        double heightDiff = 0.4;
         // density range +- the base value
         double densityRange = 50;
         // density base value
-        double densityBase = 100;
+        double densityBase = 1000;
         // how much arbitrary step does solver move in a fluid (by value in each step)
         // total length in each dimension = size * dimensionStep
         double dimensionStep = 0.1;
@@ -39,16 +39,16 @@ public class FluidGeneration {
         // curl seed
         long curlSeed = 1654987L;
         // number of steps to perform the simulation
-        int steps = 0;
+        int steps = 10;
         // floor height
-        double floorHeight = 7.5;
+        double floorHeight = 0.2;
         // density of floor
-        double floorDensity = 255.0;
+        double floorDensity = 3000.0;
         // cube size on the floor (real world coordinates)
-        double floorCubeSize = 20;
+        double floorCubeSize = 0.4;
         // cube coordinates
-        double cubePositionX = 15.0;
-        double cubePositionY = 15.0;
+        double cubePositionX = 0.8;
+        double cubePositionY = 0.8;
 
         VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
@@ -98,13 +98,6 @@ public class FluidGeneration {
 
         displayMessageWithTimestamp("Finished with fluid simulation");
 
-        //displayMessageWithTimestamp("Generate fluid floor");
-        //fluidSimulation.setFloor(floorHeight / dimensionStep, floorDensity);
-
-        //displayMessageWithTimestamp("Generate cube");
-        //fluidSimulation.addCubeOnFloor(floorCubeSize / dimensionStep, floorHeight / dimensionStep, cubePositionX, cubePositionY, floorDensity);
-
-//        fluidSimulation.writeDensityAndSpeedToConsole();
         fluidSimulation.writeDensitiesToFileAddAirAround(endFileName, floorDensity);
 
         displayMessageWithTimestamp("Finished writing densities to file. All done!");
@@ -139,14 +132,14 @@ public class FluidGeneration {
     }
 
     private static boolean cube(double dimensionStep, double cubePositionX, double cubePositionY, double cubeSize, double floorHeight, int positionX, int positionY, int positionZ) {
-        boolean correctX = positionX >= transform(cubePositionX, dimensionStep) && positionX <= transform(cubePositionX + cubeSize, dimensionStep);
-        boolean correctY = positionY >= transform(cubePositionY, dimensionStep) && positionY <= transform(cubePositionY + cubeSize, dimensionStep);
-        boolean correctZ = positionZ <= transform(cubeSize + floorHeight, dimensionStep);
+        boolean correctX = positionX >= transform(cubePositionX, dimensionStep) && positionX < transform(cubePositionX + cubeSize, dimensionStep);
+        boolean correctY = positionY >= transform(cubePositionY, dimensionStep) && positionY < transform(cubePositionY + cubeSize, dimensionStep);
+        boolean correctZ = positionZ < transform(cubeSize + floorHeight, dimensionStep);
         return correctX && correctY && correctZ;
     }
 
-    private static double transform(double value, double dimensionStep) {
-        return value / dimensionStep;
+    private static int transform(double value, double dimensionStep) {
+        return (int) (value / dimensionStep);
     }
 
     static class FluidSimulation {
@@ -207,13 +200,6 @@ public class FluidGeneration {
             return (endX + endY * this.n + endZ * this.n * this.n);
         }
 
-        private int cubeIndexNew(int x, int y, int z) {
-            int endX = x - 1;
-            int endY = y - 1;
-            int endZ = z - 1;
-            return (endX + endY * this.size + endZ * this.size * this.size);
-        }
-
         public void addDensity(int x, int y, int z, double amount) {
             // add density according to real cube
             int cubeX = x + 1;
@@ -258,7 +244,6 @@ public class FluidGeneration {
             advect(0, this.density, this.s, this.velocityX, this.velocityY, this.velocityZ);
             displayMessageWithTimestamp("Finished simulating step");
         }
-
 
         private void diffuse(int b, double[] newValues, double[] oldValues, double diff) {
             double a = this.dt * diff * this.n * this.n;
@@ -404,32 +389,6 @@ public class FluidGeneration {
             setBnd(3, velZ);
         }
 
-        /**
-         * @param floorHeight: height of floor in relative coordinate
-         */
-        public void setFloor(double floorHeight, double floorDensity) {
-            for (int i = 1; i < floorHeight; i++) {
-                for (int j = 1; j < this.size; j++) {
-                    for (int k = 1; k < this.size; k++) {
-                        this.density[index(k, j, i)] = floorDensity;
-                    }
-                }
-            }
-        }
-
-        /**
-         * puts a cube of floorDensity of cubeHeight on the
-         */
-        public void addCubeOnFloor(double cubeHeight, double floorHeight, double cubePosX, double cubePosY, double floorDensity) {
-            for (int i = (int) floorHeight; i < cubeHeight + floorHeight; i++) {
-                for (int j = (int) cubePosY; j < cubePosY + cubeHeight; j++) {
-                    for (int k = (int) cubePosX; k < cubePosX + cubeHeight; k++) {
-                        this.density[index(k, j, i)] = floorDensity;
-                    }
-                }
-            }
-        }
-
         // add air density around the cube
         public void writeDensitiesToFileAddAirAround(String fileName, double floorDensity) {
             int totalSize = this.size * this.size * this.size;
@@ -448,7 +407,7 @@ public class FluidGeneration {
                         else if (t.equals(VoxelType.FLOOR))
                             array[index(k, j, i)] = (byte) 255;
                         else {
-                            double d = this.density[cubeIndex(k, j, i)];
+                            double d = this.density[index(k, j, i)];
                             array[index(k, j, i)] = byteMap(minMax[0], minMax[1], d, floorDensity);
                         }
                     }
@@ -460,22 +419,6 @@ public class FluidGeneration {
                 fo.close();
             } catch (IOException e) {
                 displayMessageWithTimestamp("Error during writing to file");
-            }
-        }
-
-        public void writeDensityAndSpeedToConsole() {
-            for (int i = 1; i <= this.n; i++) {
-                for (int j = 1; j <= this.n; j++) {
-                    for (int k = 1; k <= this.n; k++) {
-                        double d = this.density[index(k, j, i)];
-                        double x = this.velocityX[index(k, j, i)];
-                        double y = this.velocityY[index(k, j, i)];
-                        double z = this.velocityZ[index(k, j, i)];
-                        System.out.printf("d: %.2f x: %.2f y: %.2f z: %.2f |\t", d, x, y, z);
-//                        System.out.printf("d: %.2f |\t", d);
-                    }
-                    System.out.println();
-                }
             }
         }
 

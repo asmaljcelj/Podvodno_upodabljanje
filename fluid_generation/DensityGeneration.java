@@ -68,7 +68,7 @@ public class DensityGeneration {
                         Point p = new Point(k * dimensionStep, j * dimensionStep, i * dimensionStep, densityBase);
                         if (i * dimensionStep > this.heights[index2D(k, j)])
                             p.setDensity(1.0);
-                        else if (this.terrain[index3D(k, j, i)].equals(VoxelType.CUBE))
+                        else if (this.terrain[index3D(k, j, i)].equals(VoxelType.CUBE) || this.terrain[index3D(k, j, i)].equals(VoxelType.FLOOR))
                             p.setDensity(this.floorDensity);
                         else {
                             // noise without octaves
