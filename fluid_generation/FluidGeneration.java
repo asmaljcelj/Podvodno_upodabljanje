@@ -325,6 +325,36 @@ public class FluidGeneration {
                 }
             }
 
+            // handle terrain inside fluid
+            for (int i = 1; i <= this.n; i++) {
+                for (int j = 1; j <= this.n; j++) {
+                    for (int k = 1; k <= this.n; k++) {
+                        if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.OTHER)) {
+                            // todo: HOW?
+                            if (b == 1) {
+                                // handling x axis walls
+                                if (k != 1 && !this.terrain[cubeIndex(k - 1, j, i)].equals(VoxelType.OTHER))
+                                    x[index(k, j, i)] = -x[index(k - 1, j, i)];
+                                else if (k != this.n && !this.terrain[cubeIndex(k + 1, j, i)].equals(VoxelType.OTHER))
+                                    x[index(k, j, i)] = -x[index(k + 1, j, i)];
+                            } else if (b == 2) {
+                                // handling y axis walls
+                                if (j != 1 && !this.terrain[cubeIndex(k, j - 1, i)].equals(VoxelType.OTHER))
+                                    x[index(k, j, i)] = -x[index(k, j - 1, i)];
+                                else if (j != this.n && !this.terrain[cubeIndex(k, j +1, i)].equals(VoxelType.OTHER))
+                                    x[index(k, j, i)] = -x[index(k, j + 1, i)];
+                            } else if (b == 3) {
+                                // handling z axis walls
+                                if (i != 1 && !this.terrain[cubeIndex(k, j, i - 1)].equals(VoxelType.OTHER))
+                                    x[index(k, j, i)] = -x[index(k, j, i - 1)];
+                                else if (i != this.n && !this.terrain[cubeIndex(k, j, i + 1)].equals(VoxelType.OTHER))
+                                    x[index(k, j, i)] = -x[index(k, j, i + 1)];
+                            }
+                        }
+                    }
+                }
+            }
+
             x[index(0, 0, 0)] = 0.33f * (x[index(1, 0, 0)] + x[index(0, 1, 0)] + x[index(0, 0, 1)]);
             x[index(0, this.n + 1, 0)] = 0.33f * (x[index(1, this.n + 1, 0)] + x[index(0, this.n, 0)] + x[index(0, this.n + 1, 1)]);
             x[index(0, 0, this.n + 1)] = 0.33f * (x[index(1, 0, this.n + 1)] + x[index(0, 1, this.n + 1)] + x[index(0, 0, this.n)]);
