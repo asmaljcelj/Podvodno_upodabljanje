@@ -1,5 +1,3 @@
-package fluid_generation;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -11,14 +9,14 @@ import java.sql.Timestamp;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "20_air_around.raw";
+        String endFileName = "254_air_around_no_swap_air_voxel_type_new_0_data.raw";
 
         // size of the cube (N)
-        int size = 20;
+        int size = 254;
         // base height of the fluid (in real-world measurements)
-        double heightBase = 1.2;
+        double heightBase = 15.0;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 0.4;
+        double heightDiff = 6.0;
         // density range +- the base value
         double densityRange = 50;
         // density base value
@@ -39,16 +37,16 @@ public class FluidGeneration {
         // curl seed
         long curlSeed = 1654987L;
         // number of steps to perform the simulation
-        int steps = 10;
+        int steps = 0;
         // floor height
         double floorHeight = 0.2;
         // density of floor
         double floorDensity = 3000.0;
         // cube size on the floor (real world coordinates)
-        double floorCubeSize = 0.4;
+        double floorCubeSize = 7.5;
         // cube coordinates
-        double cubePositionX = 0.8;
-        double cubePositionY = 0.8;
+        double cubePositionX = 6.5;
+        double cubePositionY = 6.5;
 
         VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
@@ -85,6 +83,8 @@ public class FluidGeneration {
                 }
             }
         }
+        terrain = potentialField.terrain;
+        fluidSimulation.setTerrain(terrain);
         // free up space
         potentialField = null;
         System.gc();
@@ -114,13 +114,13 @@ public class FluidGeneration {
             for (int j = 0; j < size; j++) {
                 for (int i = 0; i < size; i++) {
                     // handle floor
-                    if (k < floorHeight / dimensionStep) {
+                    if (k < floorHeight / dimensionStep)
                         terrain[index(i, j, k, size)] = VoxelType.FLOOR;
-                    } else if (cube(dimensionStep, cubePositionX, cubePositionY, cubeSize, floorHeight, i, j, k))
+                    else if (cube(dimensionStep, cubePositionX, cubePositionY, cubeSize, floorHeight, i, j, k))
                         // handle cube
                         terrain[index(i, j, k, size)] = VoxelType.CUBE;
                     else
-                        terrain[index(i, j, k, size)] = VoxelType.OTHER;
+                        terrain[index(i, j, k, size)] = VoxelType.FLUID;
                 }
             }
         }
@@ -329,26 +329,31 @@ public class FluidGeneration {
             for (int i = 1; i <= this.n; i++) {
                 for (int j = 1; j <= this.n; j++) {
                     for (int k = 1; k <= this.n; k++) {
-                        if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.OTHER)) {
-                            // todo: HOW?
+                        if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
                             if (b == 1) {
                                 // handling x axis walls
-                                if (k != 1 && !this.terrain[cubeIndex(k - 1, j, i)].equals(VoxelType.OTHER))
-                                    x[index(k, j, i)] = -x[index(k - 1, j, i)];
-                                else if (k != this.n && !this.terrain[cubeIndex(k + 1, j, i)].equals(VoxelType.OTHER))
-                                    x[index(k, j, i)] = -x[index(k + 1, j, i)];
+                                if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
+                                    if (k != 1 && this.terrain[cubeIndex(k - 1, j, i)].equals(VoxelType.FLUID))
+                                        x[index(k, j, i)] = -x[index(k - 1, j, i)];
+                                    else if (k != this.n && this.terrain[cubeIndex(k + 1, j, i)].equals(VoxelType.FLUID))
+                                        x[index(k, j, i)] = -x[index(k + 1, j, i)];
+                                }
                             } else if (b == 2) {
                                 // handling y axis walls
-                                if (j != 1 && !this.terrain[cubeIndex(k, j - 1, i)].equals(VoxelType.OTHER))
-                                    x[index(k, j, i)] = -x[index(k, j - 1, i)];
-                                else if (j != this.n && !this.terrain[cubeIndex(k, j +1, i)].equals(VoxelType.OTHER))
-                                    x[index(k, j, i)] = -x[index(k, j + 1, i)];
+                                if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
+                                    if (j != 1 && this.terrain[cubeIndex(k, j - 1, i)].equals(VoxelType.FLUID))
+                                        x[index(k, j, i)] = -x[index(k, j - 1, i)];
+                                    else if (j != this.n && this.terrain[cubeIndex(k, j + 1, i)].equals(VoxelType.FLUID))
+                                        x[index(k, j, i)] = -x[index(k, j + 1, i)];
+                                }
                             } else if (b == 3) {
                                 // handling z axis walls
-                                if (i != 1 && !this.terrain[cubeIndex(k, j, i - 1)].equals(VoxelType.OTHER))
-                                    x[index(k, j, i)] = -x[index(k, j, i - 1)];
-                                else if (i != this.n && !this.terrain[cubeIndex(k, j, i + 1)].equals(VoxelType.OTHER))
-                                    x[index(k, j, i)] = -x[index(k, j, i + 1)];
+                                if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
+                                    if (i != 1 && this.terrain[cubeIndex(k, j, i - 1)].equals(VoxelType.FLUID))
+                                        x[index(k, j, i)] = -x[index(k, j, i - 1)];
+                                    else if (i != this.n && this.terrain[cubeIndex(k, j, i + 1)].equals(VoxelType.FLUID))
+                                        x[index(k, j, i)] = -x[index(k, j, i + 1)];
+                                }
                             }
                         }
                     }
@@ -436,6 +441,8 @@ public class FluidGeneration {
                             array[index(k, j, i)] = (byte) 254;
                         else if (t.equals(VoxelType.FLOOR))
                             array[index(k, j, i)] = (byte) 255;
+                        else if (t.equals(VoxelType.AIR))
+                            array[index(k, j, i)] = (byte) 0;
                         else {
                             double d = this.density[index(k, j, i)];
                             array[index(k, j, i)] = byteMap(minMax[0], minMax[1], d, floorDensity);
@@ -459,7 +466,7 @@ public class FluidGeneration {
             for (int i = 1; i <= this.n; i++)
                 for (int j = 1; j <= this.n; j++)
                     for (int k = 1; k <= this.n; k++) {
-                        if (!terrain[cubeIndex(k, j, i)].equals(VoxelType.OTHER))
+                        if (!terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID))
                             continue;
                         double density = this.density[index(k, j, i)];
                         if (density >= floorDensity)
@@ -473,6 +480,8 @@ public class FluidGeneration {
                     }
             minMax[0] = min;
             minMax[1] = max;
+            displayMessageWithTimestamp("Max density is " + minMax[1]);
+            displayMessageWithTimestamp("Min density is " + minMax[0]);
             return minMax;
         }
 
@@ -480,7 +489,7 @@ public class FluidGeneration {
             if (value <= 1)
                 return (byte) 0;
             if (value >= floorDensity)
-                return (byte) 255;
+                return (byte) 253;
 
             double interval = max - min;
             double percentage = (value - min) / interval;
@@ -510,6 +519,10 @@ public class FluidGeneration {
             double[] temp = this.velocityZ;
             this.velocityZ = this.oldVelocityZ;
             this.oldVelocityZ = temp;
+        }
+
+        private void setTerrain(VoxelType[] terrain) {
+            this.terrain = terrain;
         }
 
     }

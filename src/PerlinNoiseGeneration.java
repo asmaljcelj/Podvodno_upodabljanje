@@ -1,5 +1,3 @@
-package fluid_generation;
-
 import java.util.Random;
 
 /**

@@ -1,10 +1,9 @@
-package fluid_generation;
-
 public enum VoxelType {
 
     FLOOR("floor"),
     CUBE("cube"),
-    OTHER("other");
+    FLUID("fluid"),
+    AIR("air");
 
     private String type;
 

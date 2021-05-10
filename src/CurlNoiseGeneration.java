@@ -1,5 +1,3 @@
-package fluid_generation;
-
 public class CurlNoiseGeneration {
 
     public static void main(String[] args) {
@@ -63,8 +61,10 @@ public class CurlNoiseGeneration {
                 for (int j = 0; j < this.size; j++) {
                     for (int k = 0; k < this.size; k++) {
                         PotentialCell p = new PotentialCell(k * dimensionStep, j * dimensionStep, i * dimensionStep);
-                        if (i * dimensionStep > this.heights[index2D(k, j)])
+                        if (i * dimensionStep > this.heights[index2D(k, j)]) {
                             p.setPotential(new Vector(0, 0, 0));
+                            this.terrain[index3D(k, j, i)] = VoxelType.AIR;
+                        }
                         else if (terrain[index3D(k, j, i)].equals(VoxelType.CUBE) || terrain[index3D(k, j, i)].equals(VoxelType.FLOOR))
                             p.setPotential(new Vector(0, 0, 0));
                         else

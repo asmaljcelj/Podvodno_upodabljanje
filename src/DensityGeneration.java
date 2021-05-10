@@ -1,5 +1,3 @@
-package fluid_generation;
-
 public class DensityGeneration {
 
     public static void main(String[] args) {
