@@ -1,3 +1,5 @@
+package src;
+
 public class CurlNoiseGeneration {
 
     public static void main(String[] args) {
@@ -61,18 +63,24 @@ public class CurlNoiseGeneration {
                 for (int j = 0; j < this.size; j++) {
                     for (int k = 0; k < this.size; k++) {
                         PotentialCell p = new PotentialCell(k * dimensionStep, j * dimensionStep, i * dimensionStep);
-                        if (i * dimensionStep > this.heights[index2D(k, j)]) {
-                            p.setPotential(new Vector(0, 0, 0));
+                        if (i * dimensionStep == floorHeight(this.heights[index2D(k, j)], dimensionStep))
+                            this.terrain[index3D(k, j, i)] = VoxelType.SURFACE;
+                        else if (i * dimensionStep > this.heights[index2D(k, j)])
                             this.terrain[index3D(k, j, i)] = VoxelType.AIR;
-                        }
-                        else if (terrain[index3D(k, j, i)].equals(VoxelType.CUBE) || terrain[index3D(k, j, i)].equals(VoxelType.FLOOR))
-                            p.setPotential(new Vector(0, 0, 0));
-                        else
-                            p.calculatePotential(displacement, perlinNoiseGenerator2);
+                        p.calculatePotential(displacement, perlinNoiseGenerator2);
                         this.potentialField[index3D(k, j, i)] = p;
                     }
                 }
             }
+        }
+
+        /**
+         * returns value of height discreet to values in array
+         */
+        private double floorHeight(double height, double dimensionStep) {
+            double multiplied = height / dimensionStep;
+            double floored = Math.floor(multiplied);
+            return floored * dimensionStep;
         }
 
         public double octavePerlin(double x, double y, double z, int octaves, double persistance, PerlinNoiseGeneration p) {

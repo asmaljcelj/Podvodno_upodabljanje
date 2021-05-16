@@ -1,3 +1,5 @@
+package src;
+
 public class DensityGeneration {
 
     public static void main(String[] args) {

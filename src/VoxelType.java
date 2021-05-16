@@ -1,8 +1,11 @@
+package src;
+
 public enum VoxelType {
 
     FLOOR("floor"),
     CUBE("cube"),
     FLUID("fluid"),
+    SURFACE("surface"),
     AIR("air");
 
     private String type;

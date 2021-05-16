@@ -1,3 +1,5 @@
+package src;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -9,14 +11,14 @@ import java.sql.Timestamp;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "254_air_around_no_swap_air_voxel_type_new_0_data.raw";
+        String endFileName = "test3.raw";
 
         // size of the cube (N)
-        int size = 254;
-        // base height of the fluid (in real-world measurements)
-        double heightBase = 15.0;
+        int size = 12;
+        // base height of the fluid (in real-world measurements, including floor)
+        double heightBase = 0.9;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 6.0;
+        double heightDiff = 0.2;
         // density range +- the base value
         double densityRange = 50;
         // density base value
@@ -25,28 +27,28 @@ public class FluidGeneration {
         // total length in each dimension = size * dimensionStep
         double dimensionStep = 0.1;
         // diffusion rate
-        double diffusion = 0.001;
+        double diffusion = 0.005;
         // viscosity rate
-        double viscosity = 0.01;
+        double viscosity = 0.05;
         // time between step
         double dt = 0.05;
         // seed to generate height of fluid (must be equal in curl and density)
-        long heightSeed = 12345L;
+        long heightSeed = 12698L;
         // density seed
-        long densitySeed = 123L;
+        long densitySeed = 126879L;
         // curl seed
         long curlSeed = 1654987L;
         // number of steps to perform the simulation
-        int steps = 0;
+        int steps = 2;
         // floor height
         double floorHeight = 0.2;
         // density of floor
         double floorDensity = 3000.0;
         // cube size on the floor (real world coordinates)
-        double floorCubeSize = 7.5;
+        double floorCubeSize = 0.4;
         // cube coordinates
-        double cubePositionX = 6.5;
-        double cubePositionY = 6.5;
+        double cubePositionX = 0.4;
+        double cubePositionY = 0.4;
 
         VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
@@ -172,7 +174,7 @@ public class FluidGeneration {
             this.diff = diffusion;
             this.dt = dt;
             this.visc = viscosity;
-            this.iter = 8;
+            this.iter = 4;
 
             this.s = initializeArray();
             this.density = initializeArray();
@@ -221,6 +223,7 @@ public class FluidGeneration {
         public void simulateStep() {
             displayMessageWithTimestamp("Simulating step");
             displayMessageWithTimestamp("Start velocity solver - diffusion");
+            // velocity step
             swapVelocityX();
             diffuse(1, this.velocityX, this.oldVelocityX, this.visc);
             swapVelocityY();
@@ -237,6 +240,7 @@ public class FluidGeneration {
             advect(3, this.velocityZ, this.oldVelocityZ, this.oldVelocityX, this.oldVelocityY, this.oldVelocityZ);
             project(this.velocityX, this.velocityY, this.velocityZ, this.oldVelocityX, this.oldVelocityY);
 
+            // density step
             displayMessageWithTimestamp("Start density solver");
             swapDensity();
             diffuse(0, this.density, this.s, this.diff);
@@ -332,7 +336,7 @@ public class FluidGeneration {
                         if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
                             if (b == 1) {
                                 // handling x axis walls
-                                if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
+                                if (this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLOOR) || this.terrain[cubeIndex(k, j, i)].equals(VoxelType.CUBE)) {
                                     if (k != 1 && this.terrain[cubeIndex(k - 1, j, i)].equals(VoxelType.FLUID))
                                         x[index(k, j, i)] = -x[index(k - 1, j, i)];
                                     else if (k != this.n && this.terrain[cubeIndex(k + 1, j, i)].equals(VoxelType.FLUID))
@@ -340,7 +344,7 @@ public class FluidGeneration {
                                 }
                             } else if (b == 2) {
                                 // handling y axis walls
-                                if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
+                                if (this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLOOR) || this.terrain[cubeIndex(k, j, i)].equals(VoxelType.CUBE)) {
                                     if (j != 1 && this.terrain[cubeIndex(k, j - 1, i)].equals(VoxelType.FLUID))
                                         x[index(k, j, i)] = -x[index(k, j - 1, i)];
                                     else if (j != this.n && this.terrain[cubeIndex(k, j + 1, i)].equals(VoxelType.FLUID))
@@ -348,7 +352,7 @@ public class FluidGeneration {
                                 }
                             } else if (b == 3) {
                                 // handling z axis walls
-                                if (!this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID)) {
+                                if (this.terrain[cubeIndex(k, j, i)].equals(VoxelType.FLOOR) || this.terrain[cubeIndex(k, j, i)].equals(VoxelType.CUBE)) {
                                     if (i != 1 && this.terrain[cubeIndex(k, j, i - 1)].equals(VoxelType.FLUID))
                                         x[index(k, j, i)] = -x[index(k, j, i - 1)];
                                     else if (i != this.n && this.terrain[cubeIndex(k, j, i + 1)].equals(VoxelType.FLUID))
