@@ -11,14 +11,14 @@ import java.sql.Timestamp;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "test3.raw";
+        String endFileName = "test_no_modifications_10steps.raw";
 
         // size of the cube (N)
-        int size = 12;
+        int size = 126;
         // base height of the fluid (in real-world measurements, including floor)
-        double heightBase = 0.9;
+        double heightBase = 10.0;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 0.2;
+        double heightDiff = 1.5;
         // density range +- the base value
         double densityRange = 50;
         // density base value
@@ -39,16 +39,16 @@ public class FluidGeneration {
         // curl seed
         long curlSeed = 1654987L;
         // number of steps to perform the simulation
-        int steps = 2;
+        int steps = 10;
         // floor height
-        double floorHeight = 0.2;
+        double floorHeight = 4.0;
         // density of floor
         double floorDensity = 3000.0;
         // cube size on the floor (real world coordinates)
-        double floorCubeSize = 0.4;
+        double floorCubeSize = 5.0;
         // cube coordinates
-        double cubePositionX = 0.4;
-        double cubePositionY = 0.4;
+        double cubePositionX = 3.8;
+        double cubePositionY = 3.8;
 
         VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
@@ -251,27 +251,36 @@ public class FluidGeneration {
 
         private void diffuse(int b, double[] newValues, double[] oldValues, double diff) {
             double a = this.dt * diff * this.n * this.n;
-            linSolve(b, newValues, oldValues, a, 1 + 4 * a);
+            for (int it = 0; it < this.iter; it++) {
+                for (int i = 1; i <= this.n; i++) {
+                    for (int j = 1; j <= this.n; j++) {
+                        for (int k = 1; k <= this.n; k++) {
+                            newValues[index(k, j, i)] = (oldValues[index(k, j, i)] + a *
+                                    (newValues[index(k - 1, j, i)] + newValues[index(k + 1, j, i)] +
+                                            newValues[index(k, j - 1, i)] + newValues[index(k, j + 1, i)] +
+                                            newValues[index(k, j, i - 1)] + newValues[index(k, j, i + 1)])) / (1 + 4 * a);
+                        }
+                    }
+                }
+                setBnd(b, newValues);
+            }
         }
 
         private void advect(int b, double[] newValues, double[] oldValues, double[] velocX, double[] velocY, double[] velocZ) {
-            int i0, i1, j0, j1, k0, k1;
+            int i0, j0, k0, i1, j1, k1;
+            double x, y, z, s0, t0, u0, s1, t1, u1, dt0;
 
-            double dt0 = dt * this.n;
-
-            double s0, s1, t0, t1, u0, u1;
-
-            for (int k = 1; k <= this.n; k++, k++) {
-                for (int j = 1; j <= this.n; j++, j++) {
-                    for (int i = 1; i <= this.n; i++, i++) {
-                        double x = i - dt0 * velocX[index(i, j, k)];
-                        double y = j - dt0 * velocY[index(i, j, k)];
-                        double z = k - dt0 * velocZ[index(i, j, k)];
-
+            dt0 = this.dt * this.n;
+            for (int i = 1; i <= this.n; i++) {
+                for (int j = 1; j <= this.n; j++) {
+                    for (int k = 1; k <= this.n; k++) {
+                        x = k - dt0 * velocX[index(k, j, i)];
+                        y = j - dt0 * velocY[index(k, j, i)];
+                        z = i - dt0 * velocZ[index(k, j, i)];
                         if (x < 0.5)
                             x = 0.5;
-                        if (x > (this.n + 0.5))
-                            x = this.n + 0.5f;
+                        if (x > this.n + 0.5)
+                            x = this.n + 0.5;
                         i0 = (int) x;
                         i1 = i0 + 1;
                         if (y < 0.5)
@@ -291,18 +300,15 @@ public class FluidGeneration {
                         s0 = 1 - s1;
                         t1 = y - j0;
                         t0 = 1 - t1;
-                        u1 = z - k0;
-                        u0 = 1 - u1;
+                        u0 = z - k0;
+                        u1 = 1 - u0;
 
-                        newValues[index(i, j, k)] =
-                                s0 * (t0 * (u0 * oldValues[index(i0, j0, k0)]
-                                        + u1 * oldValues[index(i0, j0, k1)])
-                                        + (t1 * (u0 * oldValues[index(i0, j1, k0)]
-                                        + u1 * oldValues[index(i0, j1, k1)]))) +
-                                        s1 * (t0 * (u0 * oldValues[index(i1, j0, k0)]
-                                                + u1 * oldValues[index(i1, j0, k1)])
-                                                + (t1 * (u0 * oldValues[index(i1, j1, k0)]
-                                                + u1 * oldValues[index(i1, j1, k1)])));
+                        newValues[index(k, j, i)] = s0 * (
+                                t0 * (u0 * oldValues[index(k0, j0, i0)] + u1 * oldValues[index(k0, j0, i1)]) +
+                                        t1 * (u0 * oldValues[index(k0, j1, i0)] + u1 * oldValues[index(k0, j1, i1)])) +
+                                s1 * (
+                                        t0 * (u0 * oldValues[index(k1, j0, i0)] + u1 * oldValues[index(k1, j0, i1)]) +
+                                                t1 * (u0 * oldValues[index(k1, j1, i0)] + u1 * oldValues[index(k1, j1, i1)]));
                     }
                 }
             }
@@ -374,52 +380,41 @@ public class FluidGeneration {
             x[index(this.n + 1, this.n + 1, this.n + 1)] = 0.33f * (x[index(this.n, this.n + 1, this.n + 1)] + x[index(this.n + 1, this.n, this.n + 1)] + x[index(this.n + 1, this.n + 1, this.n)]);
         }
 
-        private void linSolve(int b, double[] newValues, double[] oldValues, double a, double c) {
-            for (int k = 0; k < this.iter; k++) {
-                for (int m = 1; m <= this.n; m++) {
-                    for (int j = 1; j <= this.n; j++) {
-                        for (int i = 1; i <= this.n; i++) {
-                            newValues[index(i, j, m)] = (oldValues[index(i, j, m)] +
-                                    a * (newValues[index(i + 1, j, m)] + newValues[index(i - 1, j, m)] +
-                                            newValues[index(i, j - 1, m)] + newValues[index(i, j + 1, m)] +
-                                            newValues[index(i, j, m - 1)] + newValues[index(i, j, m + 1)])) / c;
-                        }
-                    }
-                }
-                setBnd(b, newValues);
-            }
-        }
-
         private void project(double[] velX, double[] velY, double[] velZ, double[] p, double[] div) {
             double h = 1.0 / this.n;
-
-            for (int k = 1; k <= this.n; k++) {
+            for (int i = 1; i <= this.n; i++) {
                 for (int j = 1; j <= this.n; j++) {
-                    for (int i = 1; i <= this.n; i++) {
-                        div[index(i, j, k)] = -0.5 * h * (
-                                velX[index(i + 1, j, k)]
-                                        - velX[index(i - 1, j, k)]
-                                        + velY[index(i, j + 1, k)]
-                                        - velY[index(i, j - 1, k)]
-                                        + velZ[index(i, j, k + 1)]
-                                        - velZ[index(i, j, k - 1)]);
-                        p[index(i, j, k)] = 0;
+                    for (int k = 1; k <= this.n; k++) {
+                        div[index(k, j, i)] = -0.5 * h * (
+                                velX[index(k + 1, j, i)] - velX[index(k - 1, j, i)]
+                                        + velY[index(k, j + 1, i)] - velY[index(k, j - 1, i)]
+                                        + velZ[index(k, j, i + 1)] - velZ[index(k, j, i - 1)]);
+                        p[index(k, j, i)] = 0;
                     }
                 }
             }
             setBnd(0, div);
             setBnd(0, p);
-            linSolve(0, p, div, 1, 4);
 
-            for (int k = 1; k <= this.n; k++) {
+            for (int it = 0; it <= this.iter; it++) {
+                for (int i = 1; i <= this.n; i++) {
+                    for (int j = 1; j <= this.n; j++) {
+                        for (int k = 1; k <= this.n; k++) {
+                            p[index(k, j, i)] = (div[index(k, j, i)] + p[index(k - 1, j, i)] + p[index(k + 1, j, i)]
+                                    + p[index(k, j - 1, i)] + p[index(k, j + 1, i)]
+                                    + p[index(k, j, i - 1)] + p[index(k, j, i + 1)]) / 4;
+                        }
+                    }
+                }
+                setBnd(0, p);
+            }
+
+            for (int i = 1; i <= this.n; i++) {
                 for (int j = 1; j <= this.n; j++) {
-                    for (int i = 1; i <= this.n; i++) {
-                        velX[index(i, j, k)] -= 0.5 * (p[index(i + 1, j, k)]
-                                - p[index(i - 1, j, k)]) / h;
-                        velY[index(i, j, k)] -= 0.5 * (p[index(i, j + 1, k)]
-                                - p[index(i, j - 1, k)]) / h;
-                        velZ[index(i, j, k)] -= 0.5 * (p[index(i, j, k + 1)]
-                                - p[index(i, j, k - 1)]) / h;
+                    for (int k = 1; k <= this.n; k++) {
+                        velX[index(k, j, i)] -= 0.5 * (p[index(k + 1, j, i)] - p[index(k - 1, j, i)]) / h;
+                        velY[index(k, j, i)] -= 0.5 * (p[index(k, j + 1, i)] - p[index(k, j - 1, i)]) / h;
+                        velZ[index(k, j, i)] -= 0.5 * (p[index(k, j, i + 1)] - p[index(k, j, i - 1)]) / h;
                     }
                 }
             }
@@ -473,10 +468,10 @@ public class FluidGeneration {
                         if (!terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID))
                             continue;
                         double density = this.density[index(k, j, i)];
-                        if (density >= floorDensity)
-                            continue;
-                        if (density <= 1)
-                            continue;
+//                        if (density >= floorDensity)
+//                            continue;
+//                        if (density <= 1)
+//                            continue;
                         if (density < min)
                             min = density;
                         if (density > max)
@@ -490,10 +485,10 @@ public class FluidGeneration {
         }
 
         private byte byteMap(double min, double max, double value, double floorDensity) {
-            if (value <= 1)
-                return (byte) 0;
-            if (value >= floorDensity)
-                return (byte) 253;
+//            if (value <= 1)
+//                return (byte) 0;
+//            if (value >= floorDensity)
+//                return (byte) 253;
 
             double interval = max - min;
             double percentage = (value - min) / interval;
