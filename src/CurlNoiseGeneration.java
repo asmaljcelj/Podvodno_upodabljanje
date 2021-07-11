@@ -51,7 +51,7 @@ public class CurlNoiseGeneration {
             PerlinNoiseGeneration p = new PerlinNoiseGeneration(seed);
             for (int i = 0; i < this.size; i++) {
                 for (int j = 0; j < this.size; j++) {
-                    double perlin = octavePerlin(j * dimensionStep, i * dimensionStep, 0, 4, 0.75, p);
+                    double perlin = p.perlin(j * dimensionStep, i * dimensionStep, this.heightBase, true);
                     this.heights[index2D(j, i)] = this.heightBase + perlin * this.heightDiff;
                 }
             }
@@ -81,20 +81,6 @@ public class CurlNoiseGeneration {
             double multiplied = height / dimensionStep;
             double floored = Math.floor(multiplied);
             return floored * dimensionStep;
-        }
-
-        public double octavePerlin(double x, double y, double z, int octaves, double persistance, PerlinNoiseGeneration p) {
-            double total = 0;
-            double frequency = 1;
-            double amplitude = 1;
-            double maxValue = 0;
-            for (int i = 0; i < octaves; i++) {
-                total += p.perlin(x * frequency, y * frequency, z * frequency, false) * amplitude;
-                maxValue += amplitude;
-                amplitude *= persistance;
-                frequency *= 2;
-            }
-            return total / maxValue;
         }
 
         private int index3D(int x, int y, int z) {

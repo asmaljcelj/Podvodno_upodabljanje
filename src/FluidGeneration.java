@@ -11,14 +11,14 @@ import java.sql.Timestamp;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "test_no_modifications_10steps.raw";
+        String endFileName = "example_512_with_adjusted_surface_gen.raw";
 
         // size of the cube (N)
-        int size = 126;
+        int size = 510;
         // base height of the fluid (in real-world measurements, including floor)
-        double heightBase = 10.0;
+        double heightBase = 20.0;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 1.5;
+        double heightDiff = 25.0;
         // density range +- the base value
         double densityRange = 50;
         // density base value
@@ -39,16 +39,16 @@ public class FluidGeneration {
         // curl seed
         long curlSeed = 1654987L;
         // number of steps to perform the simulation
-        int steps = 10;
+        int steps = 0;
         // floor height
-        double floorHeight = 4.0;
+        double floorHeight = 6.0;
         // density of floor
         double floorDensity = 3000.0;
         // cube size on the floor (real world coordinates)
-        double floorCubeSize = 5.0;
+        double floorCubeSize = 15.0;
         // cube coordinates
-        double cubePositionX = 3.8;
-        double cubePositionY = 3.8;
+        double cubePositionX = 18.0;
+        double cubePositionY = 18.0;
 
         VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
@@ -449,6 +449,7 @@ public class FluidGeneration {
                     }
                 }
             }
+            System.out.println("value at 514: " + array[514]);
             try {
                 FileOutputStream fo = new FileOutputStream(fileName);
                 fo.write(array);
@@ -468,10 +469,10 @@ public class FluidGeneration {
                         if (!terrain[cubeIndex(k, j, i)].equals(VoxelType.FLUID))
                             continue;
                         double density = this.density[index(k, j, i)];
-//                        if (density >= floorDensity)
-//                            continue;
-//                        if (density <= 1)
-//                            continue;
+                        if (density >= floorDensity)
+                            continue;
+                        if (density <= 1)
+                            continue;
                         if (density < min)
                             min = density;
                         if (density > max)
