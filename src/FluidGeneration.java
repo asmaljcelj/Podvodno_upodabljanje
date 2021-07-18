@@ -11,14 +11,14 @@ import java.sql.Timestamp;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "example_512_with_adjusted_surface_gen.raw";
+        String endFileName = "example_512_new_height_1.raw";
 
         // size of the cube (N)
         int size = 510;
         // base height of the fluid (in real-world measurements, including floor)
-        double heightBase = 20.0;
+        double heightBase = 32.0;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 25.0;
+        double heightDiff = 15.0;
         // density range +- the base value
         double densityRange = 50;
         // density base value

@@ -20,7 +20,8 @@ public class DensityGeneration {
 
     public DensityField calculateDensityField(int size, double densityRange, double densityBase, long densitySeed, long heightsSeed, double heightBase, double dimensionStep, double heightDiff, VoxelType[] terrain, double floorDensity) {
         DensityField densityField = new DensityField(size, densityRange, densityBase, heightBase, heightDiff, terrain, floorDensity);
-        densityField.calculateHeights(heightsSeed, dimensionStep);
+//        densityField.calculateHeights(heightsSeed, dimensionStep);
+        densityField.calculateHeightsWithSin();
         densityField.calculateDensities(densitySeed, dimensionStep);
         return densityField;
     }
@@ -54,8 +55,37 @@ public class DensityGeneration {
             PerlinNoiseGeneration p = new PerlinNoiseGeneration(seed);
             for (int i = 0; i < this.size; i++) {
                 for (int j = 0; j < this.size; j++) {
-                    double perlin = octavePerlin(j * dimensionStep, i * dimensionStep, 50.0, 4, 0.75, p, true);
+                    double perlin = p.perlin(j * dimensionStep, i * dimensionStep, this.heightBase + 0.01, true);
                     this.heights[index2D(j, i)] = this.heightBase + (perlin * heightDiff);
+                }
+            }
+        }
+
+        public void calculateHeightsWithSin() {
+            double[] waves = new double[this.size * this.size];
+            addWave(200, 200, 1, 1, waves);
+            double maxAmplitude = Double.MIN_VALUE;
+            for (int i = 0; i < this.size; i++) {
+                for (int j = 0; j < this.size; j++) {
+                    if (waves[index2D(j, i)] > maxAmplitude)
+                        maxAmplitude = waves[index2D(j, i)];
+                }
+            }
+            for (int i = 0; i < this.size; i++) {
+                for (int j = 0; j < this.size; j++) {
+                    double ratio = waves[index2D(j, i)] / maxAmplitude;
+                    this.heights[index2D(j, i)] = this.heightBase + (ratio * heightDiff);
+                }
+            }
+        }
+
+        public void addWave(int x, int y, double amplitude, double frequency, double[] waves) {
+            for (int i = 0; i < this.size; i++) {
+                for (int j = 0; j < this.size; j++) {
+                    double phaseShift = 0;
+                    if (x != 0)
+                        phaseShift = Math.asin((double) y / x);
+                    waves[index2D(j, i)] += amplitude * Math.sin(frequency * Math.sqrt(Math.pow((double) j - x, 2) + Math.pow((double) i - y, 2)) + phaseShift);
                 }
             }
         }
