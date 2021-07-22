@@ -1,5 +1,3 @@
-package src;
-
 public enum VoxelType {
 
     FLOOR("floor"),

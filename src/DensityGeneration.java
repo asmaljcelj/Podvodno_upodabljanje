@@ -1,5 +1,3 @@
-package src;
-
 public class DensityGeneration {
 
     public static void main(String[] args) {
@@ -18,10 +16,8 @@ public class DensityGeneration {
         //}
     }
 
-    public DensityField calculateDensityField(int size, double densityRange, double densityBase, long densitySeed, long heightsSeed, double heightBase, double dimensionStep, double heightDiff, VoxelType[] terrain, double floorDensity) {
-        DensityField densityField = new DensityField(size, densityRange, densityBase, heightBase, heightDiff, terrain, floorDensity);
-//        densityField.calculateHeights(heightsSeed, dimensionStep);
-        densityField.calculateHeightsWithSin();
+    public DensityField calculateDensityField(int size, double densityRange, double densityBase, long densitySeed, double dimensionStep, VoxelType[] terrain, double floorDensity, double[] heights) {
+        DensityField densityField = new DensityField(size, densityRange, densityBase, terrain, floorDensity, heights);
         densityField.calculateDensities(densitySeed, dimensionStep);
         return densityField;
     }
@@ -30,8 +26,6 @@ public class DensityGeneration {
         int size;
         double densityRange;
         double densityBase;
-        double heightBase;
-        double heightDiff;
 
         Point[] points;
         double[] heights;
@@ -39,55 +33,14 @@ public class DensityGeneration {
         VoxelType[] terrain;
         double floorDensity;
 
-        public DensityField(int size, double densityRange, double densityBase, double heightBase, double heightDiff, VoxelType[] terrain, double floorDensity) {
+        public DensityField(int size, double densityRange, double densityBase, VoxelType[] terrain, double floorDensity, double[] heights) {
             this.size = size;
             this.densityRange = densityRange;
             this.densityBase = densityBase;
-            this.heightBase = heightBase;
-            this.heightDiff = heightDiff;
             this.points = new Point[size * size * size];
-            this.heights = new double[size * size];
+            this.heights = heights;
             this.terrain = terrain;
             this.floorDensity = floorDensity;
-        }
-
-        public void calculateHeights(long seed, double dimensionStep) {
-            PerlinNoiseGeneration p = new PerlinNoiseGeneration(seed);
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    double perlin = p.perlin(j * dimensionStep, i * dimensionStep, this.heightBase + 0.01, true);
-                    this.heights[index2D(j, i)] = this.heightBase + (perlin * heightDiff);
-                }
-            }
-        }
-
-        public void calculateHeightsWithSin() {
-            double[] waves = new double[this.size * this.size];
-            addWave(200, 200, 1, 1, waves);
-            double maxAmplitude = Double.MIN_VALUE;
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    if (waves[index2D(j, i)] > maxAmplitude)
-                        maxAmplitude = waves[index2D(j, i)];
-                }
-            }
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    double ratio = waves[index2D(j, i)] / maxAmplitude;
-                    this.heights[index2D(j, i)] = this.heightBase + (ratio * heightDiff);
-                }
-            }
-        }
-
-        public void addWave(int x, int y, double amplitude, double frequency, double[] waves) {
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    double phaseShift = 0;
-                    if (x != 0)
-                        phaseShift = Math.asin((double) y / x);
-                    waves[index2D(j, i)] += amplitude * Math.sin(frequency * Math.sqrt(Math.pow((double) j - x, 2) + Math.pow((double) i - y, 2)) + phaseShift);
-                }
-            }
         }
 
         public void calculateDensities(long seed, double dimensionStep) {
@@ -104,7 +57,7 @@ public class DensityGeneration {
                             // noise without octaves
                             // double perlin = perlinNoiseGenerator2.perlin(p.getX(), p.getY(), p.getZ(), false);
                             // noise with octaves
-                            double perlin = octavePerlin(p.getX(), p.getY(), p.getZ(), 4, 0.75, pg, false);
+                            double perlin = pg.perlin(p.getX(), p.getY(), p.getZ(), false);
                             double d = p.getDensity() + (perlin * densityRange);
                             d = round(d, 6);
                             p.setDensity(d);
@@ -113,20 +66,6 @@ public class DensityGeneration {
                     }
                 }
             }
-        }
-
-        public double octavePerlin(double x, double y, double z, int octaves, double persistance, PerlinNoiseGeneration p, boolean fromZeroToOne) {
-            double total = 0;
-            double frequency = 1;
-            double amplitude = 1;
-            double maxValue = 0;
-            for (int i = 0; i < octaves; i++) {
-                total += p.perlin(x * frequency, y * frequency, z * frequency, fromZeroToOne) * amplitude;
-                maxValue += amplitude;
-                amplitude *= persistance;
-                frequency *= 2;
-            }
-            return total / maxValue;
         }
 
         private double round(double a, int precision) {

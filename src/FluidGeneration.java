@@ -1,8 +1,7 @@
-package src;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
+import java.util.Arrays;
 
 /**
  * Fluid generation algorithm with Perlin noise algorithm
@@ -11,14 +10,14 @@ import java.sql.Timestamp;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "example_512_new_height_1.raw";
+        String endFileName = "example_256_waves.raw";
 
         // size of the cube (N)
-        int size = 510;
+        int size = 254;
         // base height of the fluid (in real-world measurements, including floor)
-        double heightBase = 32.0;
+        double heightBase = 16.0;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 15.0;
+        double heightDiff = 5.0;
         // density range +- the base value
         double densityRange = 50;
         // density base value
@@ -41,25 +40,33 @@ public class FluidGeneration {
         // number of steps to perform the simulation
         int steps = 0;
         // floor height
-        double floorHeight = 6.0;
+        double floorHeight = 3.0;
         // density of floor
         double floorDensity = 3000.0;
         // cube size on the floor (real world coordinates)
-        double floorCubeSize = 15.0;
+        double floorCubeSize = 5.5;
         // cube coordinates
-        double cubePositionX = 18.0;
-        double cubePositionY = 18.0;
+        double cubePositionX = 9.0;
+        double cubePositionY = 9.0;
 
         VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
         // initialize both generators
         DensityGeneration densityGenerator = new DensityGeneration();
         CurlNoiseGeneration curlNoiseGenerator = new CurlNoiseGeneration();
+        HeightCalculation heightCalculation = new HeightCalculation(size, heightBase, heightDiff);
         FluidSimulation fluidSimulation = new FluidSimulation(size, diffusion, viscosity, dt, terrain);
+
+        // calculate heights of fluid
+        displayMessageWithTimestamp("Calculating wave generation");
+        heightCalculation.addWaves(Arrays.asList(
+                new HeightCalculation.Wave(200, 200, 0.5, 0.2),
+                new HeightCalculation.Wave(400, 400, 0.5, 0.26)
+        ));
 
         // calculate densities
         displayMessageWithTimestamp("Calculating density field");
-        DensityGeneration.DensityField densityField = densityGenerator.calculateDensityField(size, densityRange, densityBase, densitySeed, heightSeed, heightBase, dimensionStep, heightDiff, terrain, floorDensity);
+        DensityGeneration.DensityField densityField = densityGenerator.calculateDensityField(size, densityRange, densityBase, densitySeed, dimensionStep, terrain, floorDensity, heightCalculation.getHeights());
         // add density
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -74,7 +81,7 @@ public class FluidGeneration {
 
         // calculate potential field
         displayMessageWithTimestamp("Calculating potential field");
-        CurlNoiseGeneration.PotentialField potentialField = curlNoiseGenerator.calculatePotentialField(size, curlSeed, heightSeed, dimensionStep, heightBase, heightDiff, terrain);
+        CurlNoiseGeneration.PotentialField potentialField = curlNoiseGenerator.calculatePotentialField(size, curlSeed, dimensionStep, terrain, heightCalculation.getHeights());
         displayMessageWithTimestamp("Starting setting up environment");
         // add speed
         for (int i = 0; i < size; i++) {
@@ -449,7 +456,6 @@ public class FluidGeneration {
                     }
                 }
             }
-            System.out.println("value at 514: " + array[514]);
             try {
                 FileOutputStream fo = new FileOutputStream(fileName);
                 fo.write(array);

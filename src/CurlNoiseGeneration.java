@@ -1,5 +1,3 @@
-package src;
-
 public class CurlNoiseGeneration {
 
     public static void main(String[] args) {
@@ -20,18 +18,14 @@ public class CurlNoiseGeneration {
         //}
     }
 
-    public PotentialField calculatePotentialField(int size, long curlSeed, long heightSeed, double dimensionStep, double heightBase, double heightDiff, VoxelType[] terrain) {
-        PotentialField potentialField = new PotentialField(size, heightBase, heightDiff, terrain);
-//        potentialField.calculateHeights(heightSeed, dimensionStep);
-        potentialField.calculateHeightsWithSin();
+    public PotentialField calculatePotentialField(int size, long curlSeed, double dimensionStep, VoxelType[] terrain, double[] heights) {
+        PotentialField potentialField = new PotentialField(size, terrain, heights);
         potentialField.calculateVelocityField(curlSeed, dimensionStep);
         return potentialField;
     }
 
     static class PotentialField {
         int size;
-        double heightBase;
-        double heightDiff;
         double displacement = 0.0001;
 
         PotentialCell[] potentialField;
@@ -39,53 +33,11 @@ public class CurlNoiseGeneration {
 
         VoxelType[] terrain;
 
-        public PotentialField(int size, double heightBase, double heightDiff, VoxelType[] terrain) {
+        public PotentialField(int size, VoxelType[] terrain, double[] heights) {
             this.size = size;
-            this.heightBase = heightBase;
-            this.heightDiff = heightDiff;
             this.potentialField = new PotentialCell[size * size * size];
-            this.heights = new double[size * size];
+            this.heights = heights;
             this.terrain = terrain;
-        }
-
-        public void calculateHeights(long seed, double dimensionStep) {
-            PerlinNoiseGeneration p = new PerlinNoiseGeneration(seed);
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    double perlin = p.perlin(j * dimensionStep, i * dimensionStep, this.heightBase + 0.01, true);
-                    this.heights[index2D(j, i)] = this.heightBase + perlin * this.heightDiff;
-                }
-            }
-        }
-
-        public void calculateHeightsWithSin() {
-            double[] waves = new double[this.size * this.size];
-            addWave(200, 200, 1, 1, waves);
-            addWave(400, 400, 2, 3, waves);
-            double maxAmplitude = Double.MIN_VALUE;
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    if (waves[index2D(j, i)] > maxAmplitude)
-                        maxAmplitude = waves[index2D(j, i)];
-                }
-            }
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    double ratio = waves[index2D(j, i)] / maxAmplitude;
-                    this.heights[index2D(j, i)] = this.heightBase + (ratio * heightDiff);
-                }
-            }
-        }
-
-        public void addWave(int x, int y, double amplitude, double frequency, double[] waves) {
-            for (int i = 0; i < this.size; i++) {
-                for (int j = 0; j < this.size; j++) {
-                    double phaseShift = 0;
-                    if (x != 0)
-                        phaseShift = Math.asin((double) y / x);
-                    waves[index2D(j, i)] += amplitude * Math.sin(frequency * Math.sqrt(Math.pow((double) j - x, 2) + Math.pow((double) i - y, 2)) + phaseShift);
-                }
-            }
         }
 
         public void calculateVelocityField(long seed, double dimensionStep) {
@@ -216,11 +168,6 @@ public class CurlNoiseGeneration {
 
         @Override
         public String toString() {
-//            return "Vector{" +
-//                    "x=" + x +
-//                    ", y=" + y +
-//                    ", z=" + z +
-//                    '}';
             double roundedX = round(x, 2);
             double roundedY = round(y, 2);
             double roundedZ = round(z, 2);
