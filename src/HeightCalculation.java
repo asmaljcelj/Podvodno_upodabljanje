@@ -24,7 +24,7 @@ public class HeightCalculation {
     private void addWave(Wave wave) {
         double phaseShift = 0;
         if (wave.getStartX() != 0)
-            phaseShift = Math.asin((double) wave.getStartY() / wave.getStartX());
+            phaseShift = (double) wave.getStartY() / wave.getStartX();
         for (int i = 0; i < this.size; i++)
             for (int j = 0; j < this.size; j++)
                 waves[index2D(j, i)] += wave.getAmplitude() * Math.sin(wave.getFrequency() * Math.sqrt(Math.pow((double) j - wave.getStartX(), 2) + Math.pow((double) i - wave.getStartY(), 2)) + phaseShift);

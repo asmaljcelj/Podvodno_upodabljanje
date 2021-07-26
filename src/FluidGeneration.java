@@ -10,14 +10,14 @@ import java.util.Arrays;
 public class FluidGeneration {
 
     public static void main(String[] args) {
-        String endFileName = "example_256_waves.raw";
+        String endFileName = "example_512_waves_3.raw";
 
         // size of the cube (N)
-        int size = 254;
+        int size = 510;
         // base height of the fluid (in real-world measurements, including floor)
-        double heightBase = 16.0;
+        double heightBase = 32.0;
         // range of height (must be equal in curl and density) - in real-world measurements
-        double heightDiff = 5.0;
+        double heightDiff = 10.0;
         // density range +- the base value
         double densityRange = 50;
         // density base value
@@ -31,8 +31,6 @@ public class FluidGeneration {
         double viscosity = 0.05;
         // time between step
         double dt = 0.05;
-        // seed to generate height of fluid (must be equal in curl and density)
-        long heightSeed = 12698L;
         // density seed
         long densitySeed = 126879L;
         // curl seed
@@ -44,10 +42,10 @@ public class FluidGeneration {
         // density of floor
         double floorDensity = 3000.0;
         // cube size on the floor (real world coordinates)
-        double floorCubeSize = 5.5;
+        double floorCubeSize = 11.0;
         // cube coordinates
-        double cubePositionX = 9.0;
-        double cubePositionY = 9.0;
+        double cubePositionX = 18.0;
+        double cubePositionY = 18.0;
 
         VoxelType[] terrain = createTerrain(size, dimensionStep, floorHeight, cubePositionX, cubePositionY, floorCubeSize);
 
@@ -61,7 +59,8 @@ public class FluidGeneration {
         displayMessageWithTimestamp("Calculating wave generation");
         heightCalculation.addWaves(Arrays.asList(
                 new HeightCalculation.Wave(200, 200, 0.5, 0.2),
-                new HeightCalculation.Wave(400, 400, 0.5, 0.26)
+                new HeightCalculation.Wave(400, 400, 0.2, 0.16),
+                new HeightCalculation.Wave(150, 390, 0.4, 0.23)
         ));
 
         // calculate densities
