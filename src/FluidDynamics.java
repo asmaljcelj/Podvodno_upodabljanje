@@ -1,8 +1,11 @@
+import data.Wave;
 import parameters.FluidSimulationParameters;
 import data.VolumeState;
 import generation.FluidGeneration;
 import simulation.FluidSimulation;
 import util.ProgramUtils;
+
+import java.util.List;
 
 /**
  * Main class for fluid dynamics program.
@@ -23,10 +26,10 @@ public class FluidDynamics {
     public static void main(String[] args) {
         // define parameters of the volume
         FluidSimulationParameters parameters = new FluidSimulationParameters()
-                .withEndFileName("test_s.raw")
-                .withSize(20)
-                .withHeightBase(0.8)
-                .withHeightSpan(0.3)
+                .withEndFileName("volume_256_5_steps.raw")
+                .withSize(254)
+                .withHeightBase(15.2)
+                .withHeightSpan(5.1)
                 .withDensityRange(30.0)
                 .withDensityBase(1000.0)
                 .withDimensionDiscretizationStep(0.1)
@@ -34,12 +37,17 @@ public class FluidDynamics {
                 .withViscosityRate(0.01)
                 .withTimeStep(0.05)
                 .withGenerationSeed(-1L)
-                .withNumOfSteps(0)
-                .withFloorHeight(0.0)
+                .withNumOfSteps(5)
+                .withFloorHeight(2.5)
                 .withFloorDensity(3000.0)
-                .withCubeSize(0.3)
-                .withCubePositionX(0.8)
-                .withCubePositionY(0.8);
+                .withCubeSize(3.8)
+                .withCubePositionX(10.8)
+                .withCubePositionY(10.8)
+                .withWaves(List.of(
+                        new Wave().withStartX(200).withStartY(200).withAmplitude(0.5).withFrequency(0.2),
+                        new Wave().withStartX(300).withStartY(300).withAmplitude(0.2).withFrequency(0.16),
+                        new Wave().withStartX(150).withStartY(390).withAmplitude(0.4).withFrequency(0.23)
+                ));
 
         // create a volume alongside potential field
         ProgramUtils.displayMessageWithTimestamp("Creating volume");

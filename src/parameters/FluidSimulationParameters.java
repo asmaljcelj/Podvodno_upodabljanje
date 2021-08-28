@@ -1,5 +1,10 @@
 package parameters;
 
+import data.Wave;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author Aljaž Šmaljcelj
  * Class, holding information about all the parameters user can specify before running the program to create and simulate fluid.
@@ -29,6 +34,7 @@ public class FluidSimulationParameters {
     private double cubePositionX = 4.0;
     private double cubePositionY = 4.0;
     private String endFileName = "volume.raw";
+    private List<Wave> waves = new ArrayList<>();
 
     public FluidSimulationParameters() {
     }
@@ -171,6 +177,14 @@ public class FluidSimulationParameters {
         return this;
     }
 
+    /**
+     * @param waves list of waves with information about its origins, amplitude and frequency
+     */
+    public FluidSimulationParameters withWaves(List<Wave> waves) {
+        this.waves = waves;
+        return this;
+    }
+
     // GETTER methods
     public int getSize() {
         return size;
@@ -238,5 +252,9 @@ public class FluidSimulationParameters {
 
     public String getEndFileName() {
         return endFileName;
+    }
+
+    public List<Wave> getWaves() {
+        return waves;
     }
 }

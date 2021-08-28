@@ -63,12 +63,7 @@ public class FluidGeneration {
                 .withSize(this.size)
                 .withHeightBase(this.heightBase)
                 .withHeightDiff(this.heightDiff);
-        List<Wave> waves = List.of(
-                new Wave().withStartX(200).withStartY(200).withAmplitude(0.5).withFrequency(0.2),
-                new Wave().withStartX(300).withStartY(300).withAmplitude(0.2).withFrequency(0.16),
-                new Wave().withStartX(150).withStartY(390).withAmplitude(0.4).withFrequency(0.23)
-        );
-        double[] heights = new HeightCalculation(heightParameters).addWavesAndCalculateHeights(waves);
+        double[] heights = new HeightCalculation(heightParameters).addWavesAndCalculateHeights(parameters.getWaves());
         terrain = terrainGeneration.updateVoxelTypesWithAir(terrain, heights);
         volumeState.setTerrain(terrain);
         // create densities
