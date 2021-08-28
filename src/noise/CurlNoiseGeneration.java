@@ -22,19 +22,17 @@ public class CurlNoiseGeneration {
             System.out.println(i);
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
-//                    VoxelPotential vp = new VoxelPotential(k * parameters.getDimensionStep(), j * parameters.getDimensionStep(), i * parameters.getDimensionStep());
                     Voxel v = parameters.getData()[VolumeUtils.indexIn3D(size, k, j, i)];
                     if (!parameters.getTerrain()[VolumeUtils.indexIn3D(size, k, j, i)].equals(VoxelType.FLUID)) {
-                        v.setPotential(new Vector(0, 0, 0));
+                        v.setVelocity(new Vector(0, 0, 0));
                     } else {
-                        v.calculatePotential(parameters.getDisplacement(), png);
-//                        double distanceToNearestNonFluidVoxelWeighted = VolumeUtils.calculateDistanceToNearestNonFluidVoxel(parameters.getTerrain(), size, k, j, i) / size;
+                        v.calculateVelocity(parameters.getDisplacement(), png);
                         double distanceToNearestNonFluidVoxelWeighted = VolumeUtils.calculateDistance(0, parameters.getTerrain(), new boolean[size * size * size], size, k, j, i, parameters.getMaxRecursionDistance()) / parameters.getMaxRecursionDistance();
-                        v.setPotential(v.getPotential().setToSpecificLengthBasedOnSmoothFactor(distanceToNearestNonFluidVoxelWeighted));
+                        v.setVelocity(v.getVelocity().setToSpecificLengthBasedOnSmoothFactor(distanceToNearestNonFluidVoxelWeighted));
                     }
-                    if (Double.isNaN(v.getPotential().getX()) || Double.isNaN(v.getPotential().getY()) || Double.isNaN(v.getPotential().getZ()))
+                    if (Double.isNaN(v.getVelocity().getX()) || Double.isNaN(v.getVelocity().getY()) || Double.isNaN(v.getVelocity().getZ()))
                         System.out.println();
-                    vectors[VolumeUtils.indexIn3D(size, k, j, i)] = v.getPotential();
+                    vectors[VolumeUtils.indexIn3D(size, k, j, i)] = v.getVelocity();
                 }
             }
         }

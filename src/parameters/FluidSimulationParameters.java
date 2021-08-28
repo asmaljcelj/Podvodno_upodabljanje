@@ -12,23 +12,23 @@ package parameters;
  */
 public class FluidSimulationParameters {
 
-    private int size;
-    private double heightBase;
-    private double heightSpan;
-    private double densityBase;
-    private double densityRange;
-    private double dimensionDiscretizationStep;
-    private double diffusionRate;
-    private double viscosityRate;
-    private double timeStep;
+    private int size = 126;
+    private double heightBase = 8.0;
+    private double heightSpan = 3.0;
+    private double densityBase = 30.0;
+    private double densityRange = 1000.0;
+    private double dimensionDiscretizationStep = 0.1;
+    private double diffusionRate = 0.001;
+    private double viscosityRate = 0.01;
+    private double timeStep = 0.05;
     private long generationSeed = -1L;
-    private int numOfSteps;
-    private double densityFloor;
-    private double heightFloor;
-    private double cubeSize;
-    private double cubePositionX;
-    private double cubePositionY;
-    private String endFileName;
+    private int numOfSteps = 5;
+    private double densityFloor = 3000.0;
+    private double heightFloor = 2.0;
+    private double cubeSize = 2.6;
+    private double cubePositionX = 4.0;
+    private double cubePositionY = 4.0;
+    private String endFileName = "volume.raw";
 
     public FluidSimulationParameters() {
     }

@@ -23,7 +23,7 @@ public class TerrainGeneration {
                         terrain[VolumeUtils.indexIn3D(size, i, j, k)] = VoxelType.FLOOR;
                     else if (cube(i, j, k))
                         // handle cube
-                        terrain[VolumeUtils.indexIn3D(size, i, j, k)] = VoxelType.CUBE;
+                        terrain[VolumeUtils.indexIn3D(size, i, j, k)] = VoxelType.OBJECT;
                     else
                         terrain[VolumeUtils.indexIn3D(size, i, j, k)] = VoxelType.FLUID;
                 }

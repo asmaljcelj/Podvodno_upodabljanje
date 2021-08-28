@@ -14,14 +14,14 @@ import java.util.List;
 
 public class FluidGeneration {
 
-    private final int size;
-    private final double dimensionStep;
-    private final double floorHeight;
-    private final double cubePositionX;
-    private final double cubePositionY;
-    private final double floorCubeSize;
-    private final double heightBase;
-    private final double heightDiff;
+    private final int size;//
+    private final double dimensionStep;//
+    private final double floorHeight;//
+    private final double cubePositionX;//
+    private final double cubePositionY;//
+    private final double floorCubeSize;//
+    private final double heightBase;//
+    private final double heightDiff;//
     private final double densityBase;
     private final double densitySpan;
     private final long generationSeed;

@@ -3,9 +3,8 @@ package data;
 public enum VoxelType {
 
     FLOOR("floor"),
-    CUBE("cube"),
+    OBJECT("object"),
     FLUID("fluid"),
-    SURFACE("surface"),
     AIR("air");
 
     private String type;

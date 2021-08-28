@@ -25,7 +25,7 @@ public class VolumeState {
     private double[] oldVelocityY;
     private double[] oldVelocityZ;
     // number of iterations for method resolution
-    private int iter = 4;
+    private final int iter = 6;
     // array containing, which material voxels possesses
     private VoxelType[] terrain;
 

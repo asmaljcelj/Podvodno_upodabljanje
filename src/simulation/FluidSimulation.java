@@ -5,9 +5,13 @@ import data.VoxelType;
 import util.ProgramUtils;
 import util.VolumeUtils;
 
+import java.util.List;
+
 public class FluidSimulation {
 
     private final VolumeState volumeState;
+
+    private static final List<VoxelType> nonFluidVoxelTypes = List.of(VoxelType.AIR, VoxelType.OBJECT, VoxelType.FLOOR);
 
     public FluidSimulation(VolumeState volumeState) {
         this.volumeState = volumeState;
@@ -29,7 +33,7 @@ public class FluidSimulation {
         advect(1, volumeState.getVelocityX(), volumeState.getOldVelocityX(), volumeState.getOldVelocityX(), volumeState.getOldVelocityY(), volumeState.getOldVelocityZ());
         advect(2, volumeState.getVelocityY(), volumeState.getOldVelocityY(), volumeState.getOldVelocityX(), volumeState.getOldVelocityY(), volumeState.getOldVelocityZ());
         advect(3, volumeState.getVelocityZ(), volumeState.getOldVelocityZ(), volumeState.getOldVelocityX(), volumeState.getOldVelocityY(), volumeState.getOldVelocityZ());
-        project(volumeState.getVelocityX(), volumeState.getVelocityY(), volumeState.getVelocityZ(), volumeState.getOldVelocityX(), volumeState.getOldVelocityX());
+        project(volumeState.getVelocityX(), volumeState.getVelocityY(), volumeState.getVelocityZ(), volumeState.getOldVelocityX(), volumeState.getOldVelocityY());
 
         ProgramUtils.displayMessageWithTimestamp("density solver");
 //        volumeState.swapDensity();
@@ -45,12 +49,38 @@ public class FluidSimulation {
             for (int i = 1; i <= volumeState.getN(); i++) {
                 for (int j = 1; j <= volumeState.getN(); j++) {
                     for (int k = 1; k <= volumeState.getN(); k++) {
-                        if (!volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLUID))
+                        int volumeSizeX = k - 1;
+                        int volumeSizeY = j - 1;
+                        int volumeSizeZ = i - 1;
+                        if (!volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY, volumeSizeZ)].equals(VoxelType.FLUID))
                             continue;
-                        newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = (oldValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] + a *
-                                (newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k - 1, j, i)] + newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k + 1, j, i)] +
-                                        newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j - 1, i)] + newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j + 1, i)] +
-                                        newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i - 1)] + newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i + 1)])) / (1 + 4 * a);
+                        int neighbouringVoxels = 0;
+                        double neighbouringVoxelValues = 0;
+                        if (volumeSizeX - 1 >= 0 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX - 1, volumeSizeY, volumeSizeZ)].equals(VoxelType.FLUID)) {
+                            neighbouringVoxelValues += newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k - 1, j, i)];
+                            neighbouringVoxels++;
+                        }
+                        if (volumeSizeX + 1 < volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX + 1, volumeSizeY, volumeSizeZ)].equals(VoxelType.FLUID)) {
+                            neighbouringVoxelValues += newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k + 1, j, i)];
+                            neighbouringVoxels++;
+                        }
+                        if (volumeSizeY - 1 >= 0 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY - 1, volumeSizeZ)].equals(VoxelType.FLUID)) {
+                            neighbouringVoxelValues += newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j - 1, i)];
+                            neighbouringVoxels++;
+                        }
+                        if (volumeSizeY + 1 < volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY + 1, volumeSizeZ)].equals(VoxelType.FLUID)) {
+                            neighbouringVoxelValues += newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j + 1, i)];
+                            neighbouringVoxels++;
+                        }
+                        if (volumeSizeZ - 1 >= 0 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY, volumeSizeZ - 1)].equals(VoxelType.FLUID)) {
+                            neighbouringVoxelValues += newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i - 1)];
+                            neighbouringVoxels++;
+                        }
+                        if (volumeSizeZ + 1 <= volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY, volumeSizeZ + 1)].equals(VoxelType.FLUID)) {
+                            neighbouringVoxelValues += newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i + 1)];
+                            neighbouringVoxels++;
+                        }
+                        newValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = (oldValues[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] + a * neighbouringVoxelValues) / (1 + neighbouringVoxels * a);
                     }
                 }
             }
@@ -131,34 +161,37 @@ public class FluidSimulation {
         for (int i = 1; i <= volumeState.getN(); i++) {
             for (int j = 1; j <= volumeState.getN(); j++) {
                 for (int k = 1; k <= volumeState.getN(); k++) {
-                    if (!volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLUID)) {
+                    int volumeSizeX = k - 1;
+                    int volumeSizeY = j - 1;
+                    int volumeSizeZ = i - 1;
+                    if (!volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY, volumeSizeZ)].equals(VoxelType.FLUID)) {
                         if (b == 1) {
                             // handling x axis walls
-                            if (volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLOOR) ||
-                                    volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.CUBE)) {
-                                if (k != 1 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 2, j - 1, i - 1)].equals(VoxelType.FLUID))
-                                    x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)] = -x[VolumeUtils.indexIn3D(volumeState.getN(), k - 2, j - 1, i - 1)];
-                                else if (k != volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k, j - 1, i - 1)].equals(VoxelType.FLUID))
-                                    x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)] = -x[VolumeUtils.indexIn3D(volumeState.getN(), k, j - 1, i - 1)];
-                            }
+//                            if (volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLOOR) ||
+//                                    volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.OBJECT)) {
+                            if (volumeSizeX - 1 >= 0 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX - 1, volumeSizeY, volumeSizeZ)].equals(VoxelType.FLUID))
+                                x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = -x[VolumeUtils.indexIn3D(volumeState.getSize(), k - 1, j, i)];
+                            else if (volumeSizeX + 1 < volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX + 1, volumeSizeY, volumeSizeZ)].equals(VoxelType.FLUID))
+                                x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = -x[VolumeUtils.indexIn3D(volumeState.getSize(), k + 1, j, i)];
+//                            }
                         } else if (b == 2) {
                             // handling y axis walls
-                            if (volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLOOR) ||
-                                    volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.CUBE)) {
-                                if (j != 1 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 2, i - 1)].equals(VoxelType.FLUID))
-                                    x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)] = -x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 2, i - 1)];
-                                else if (j != volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j, i - 1)].equals(VoxelType.FLUID))
-                                    x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)] = -x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j, i - 1)];
-                            }
+//                            if (volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLOOR) ||
+//                                    volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.OBJECT)) {
+                            if (volumeSizeY - 1 >= 0 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY - 1, volumeSizeZ)].equals(VoxelType.FLUID))
+                                x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = -x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j - 1, i)];
+                            else if (volumeSizeY + 1 < volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY + 1, volumeSizeZ)].equals(VoxelType.FLUID))
+                                x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = -x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j + 1, i)];
+//                            }
                         } else if (b == 3) {
                             // handling z axis walls
-                            if (volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLOOR) ||
-                                    volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.CUBE)) {
-                                if (i != 1 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 2)].equals(VoxelType.FLUID))
-                                    x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)] = -x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 2)];
-                                else if (i != volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i)].equals(VoxelType.FLUID))
-                                    x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)] = -x[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i)];
-                            }
+//                            if (volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.FLOOR) ||
+//                                    volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)].equals(VoxelType.OBJECT)) {
+                            if (volumeSizeZ - 1 >= 0 && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY, volumeSizeZ - 1)].equals(VoxelType.FLUID))
+                                x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = -x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i - 1)];
+                            else if (volumeSizeZ + 1 < volumeState.getN() && volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), volumeSizeX, volumeSizeY, volumeSizeZ + 1)].equals(VoxelType.FLUID))
+                                x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = -x[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i + 1)];
+//                            }
                         }
                     }
                 }

@@ -23,10 +23,10 @@ public class FluidDynamics {
     public static void main(String[] args) {
         // define parameters of the volume
         FluidSimulationParameters parameters = new FluidSimulationParameters()
-                .withEndFileName("test_128_5_steps.raw")
-                .withSize(126)
-                .withHeightBase(8.0)
-                .withHeightSpan(3.0)
+                .withEndFileName("test_s.raw")
+                .withSize(20)
+                .withHeightBase(0.8)
+                .withHeightSpan(0.3)
                 .withDensityRange(30.0)
                 .withDensityBase(1000.0)
                 .withDimensionDiscretizationStep(0.1)
@@ -34,12 +34,12 @@ public class FluidDynamics {
                 .withViscosityRate(0.01)
                 .withTimeStep(0.05)
                 .withGenerationSeed(-1L)
-                .withNumOfSteps(5)
-                .withFloorHeight(2.0)
+                .withNumOfSteps(0)
+                .withFloorHeight(0.0)
                 .withFloorDensity(3000.0)
-                .withCubeSize(2.6)
-                .withCubePositionX(4.0)
-                .withCubePositionY(4.0);
+                .withCubeSize(0.3)
+                .withCubePositionX(0.8)
+                .withCubePositionY(0.8);
 
         // create a volume alongside potential field
         ProgramUtils.displayMessageWithTimestamp("Creating volume");

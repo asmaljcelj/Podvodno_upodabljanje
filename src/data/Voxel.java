@@ -6,8 +6,7 @@ public class Voxel {
 
     private final double x, y, z;
     private double density;
-    private Vector potential;
-    private VoxelType voxelType;
+    private Vector velocity;
 
     public Voxel(double x, double y, double z, double density) {
         this.x = x;
@@ -16,7 +15,7 @@ public class Voxel {
         this.density = density;
     }
 
-    public void calculatePotential(double displacement, PerlinNoiseGeneration p) {
+    public void calculateVelocity(double displacement, PerlinNoiseGeneration p) {
         Vector potential1 = p.perlin(this.x, this.y, this.z);
         Vector potential2 = p.perlin(this.x + 36000, this.y + 36000, this.z + 36000);
         Vector potential3 = p.perlin(this.x + 12497, this.y + 12497, this.z + 12497);
@@ -36,7 +35,7 @@ public class Voxel {
         double p12 = (potential1Offset2.getY() - potential1.getY()) / displacement;
 
         // calculate final velocity field
-        this.potential = new Vector(p32 - p23, p13 - p31, p21 - p12).normalize();
+        this.velocity = new Vector(p32 - p23, p13 - p31, p21 - p12).normalize();
     }
 
     // GETTER methods
@@ -56,12 +55,8 @@ public class Voxel {
         return density;
     }
 
-    public Vector getPotential() {
-        return potential;
-    }
-
-    public VoxelType getVoxelType() {
-        return voxelType;
+    public Vector getVelocity() {
+        return velocity;
     }
 
     // SETTER methods
@@ -69,11 +64,8 @@ public class Voxel {
         this.density = density;
     }
 
-    public void setPotential(Vector potential) {
-        this.potential = potential;
+    public void setVelocity(Vector velocity) {
+        this.velocity = velocity;
     }
 
-    public void setVoxelType(VoxelType voxelType) {
-        this.voxelType = voxelType;
-    }
 }

@@ -22,11 +22,10 @@ public class DensityGeneration {
             for (int j = 0; j < size; j++) {
                 for (int k = 0; k < size; k++) {
                     VoxelType voxelType = parameters.getTerrain()[VolumeUtils.indexIn3D(size, k, j, i)];
-//                    VoxelDensity v = new VoxelDensity(k * parameters.getDimensionStep(), j * parameters.getDimensionStep(), i * parameters.getDimensionStep(), parameters.getDensityBase());
                     Voxel v = parameters.getData()[VolumeUtils.indexIn3D(size, k, j, i)];
                     if (voxelType.equals(VoxelType.AIR))
                         v.setDensity(1.0);
-                    else if (voxelType.equals(VoxelType.CUBE) || voxelType.equals(VoxelType.FLOOR))
+                    else if (voxelType.equals(VoxelType.OBJECT) || voxelType.equals(VoxelType.FLOOR))
                         v.setDensity(parameters.getFloorDensity());
                     else {
                         double perlinNoise = png.perlin(v.getX(), v.getY(), v.getZ(), false);

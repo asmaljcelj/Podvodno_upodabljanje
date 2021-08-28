@@ -27,7 +27,7 @@ public class ProgramUtils {
                         continue;
                     }
                     VoxelType t = volumeState.getTerrain()[VolumeUtils.indexIn3D(volumeState.getN(), k - 1, j - 1, i - 1)];
-                    if (t.equals(VoxelType.CUBE))
+                    if (t.equals(VoxelType.OBJECT))
                         array[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = (byte) 254;
                     else if (t.equals(VoxelType.FLOOR))
                         array[VolumeUtils.indexIn3D(volumeState.getSize(), k, j, i)] = (byte) 255;
@@ -80,8 +80,8 @@ public class ProgramUtils {
     private static byte byteMap(double min, double max, double value) {
         double interval = max - min;
         double percentage = (value - min) / interval;
-        int mappedValue = (int) (percentage * 253);
-        return (byte) mappedValue;
+        int mappedValue = (int) (percentage * 252);
+        return (byte) (mappedValue + 1);
     }
 
 }

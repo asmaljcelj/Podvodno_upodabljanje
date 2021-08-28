@@ -35,22 +35,6 @@ public class VolumeUtils {
         return (double) tmp / factor;
     }
 
-    public static double calculateDistanceToNearestNonFluidVoxel(VoxelType[] terrain, int size, int voxelX, int voxelY, int voxelZ) {
-        double minDistance = -1;
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                for (int k = 0; k < size; k++) {
-                    if (terrain[indexIn3D(size, k, j, i)].equals(VoxelType.FLUID))
-                        continue;
-                    double distance = calculateDistance(k, j, i, voxelX, voxelY, voxelZ);
-                    if (minDistance == -1 || distance < minDistance)
-                        minDistance = distance;
-                }
-            }
-        }
-        return minDistance;
-    }
-
     public static double calculateDistance(double currentDistance, VoxelType[] terrain, boolean[] visited, int size, int currentX, int currentY, int currentZ, double maxDistance) {
         if (!terrain[indexIn3D(size, currentX, currentY, currentZ)].equals(VoxelType.FLUID) || currentDistance == maxDistance)
             return currentDistance;
@@ -90,7 +74,7 @@ public class VolumeUtils {
         }
         // z + 1
         if (indexIn3D(size, currentX, currentY, currentZ + 1) < visited.length && !visited[indexIn3D(size, currentX, currentY, currentZ + 1)]) {
-            visited[indexIn3D(size, currentX - 1, currentY, currentZ)] = true;
+            visited[indexIn3D(size, currentX, currentY, currentZ + 1)] = true;
             double min = calculateDistance(currentDistance + 1, terrain, visited, size, currentX, currentY, currentZ + 1, maxDistance);
             if (min < minDistance)
                 minDistance = min;
